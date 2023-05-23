@@ -88,111 +88,85 @@ player1 = Player(defaultPosX + wallSize, defaultPosY + wallSize, blockSize, WHIT
 player2 = Player(defaultPosX + wallSize, defaultPosY + wallSize, blockSize, BLACK)
 
 #gameLogic
-rows, columns = (17, 17)
-boardArray = [[None]*rows for _ in range(columns)]
-boardArray[8][0] = 'p1'
-boardArray[8][16] = 'p2'
-#boardArray[12][10] = 'w'
-#boardArray[13][10] = 'w'
-#boardArray[14][10] = 'w'
-#boardArray[7][7] = 'w'
-#boardArray[7][8] = 'w'
-#boardArray[7][9] = 'w'
-
-#class GameLogic:
-#    def playerMove(board):
-
-
-
-#wallLogic
-class WallLogic:
-    def wallCountRow(board):
-        res = []
-        for i in range(rows):
-            count = 0
-            temp = []
-            for j in range(columns):
-                if board[i][j] == 'w':
-                    count += 1
-                    temp.append((j, i))
-                    if count == 3:
-                        res.append(temp)
-                else:
-                    count = 0
-                    temp = list()
-        return res
-
-    def wallCountColumn(board):
-        res = []
-        for i in range(rows):
-            count = 0
-            temp = []
-            for j in range(columns):
-                if board[j][i] == 'w':
-                    count += 1
-                    temp.append((i, j))
-                    if count == 3:
-                        res.append(temp)
-                else:
-                    count = 0
-                    temp = list()
-        return res
+rows, columns = (9, 9)
+playersPosition = [[None]*rows for _ in range(columns)]
+playersPosition[4][0] = 'p1'
+playersPosition[4][8] = 'p2'
+verticalWallPositions = [[None]*rows for _ in range(columns)]
+horizontalWallPositions = [[None]*rows for _ in range(columns)]
     
 walls = pygame.sprite.Group()
-wallbuttons = pygame.sprite.Group()
 
-wallArray = [[None]*rows for _ in range(columns)]
-for i in range(1, 9):
-    for j in range(1, 9):
-        tempButton = pygame.draw.rect(screen, BLACK, pygame.Rect(defaultPosX + wallSize/2 + (blockSize + wallSize) * i + ((i - 1) * wallSize), 
-                                                                defaultPosY - wallSize/2 + ((blockSize + (2 * wallSize)) * j),
-                                                                wallSize, wallSize))
-        wallArray[i - 1][j - 1] = tempButton
+rotateButtonFont = pygame.font.SysFont('Arial', 30)
+horizontalRotateButtonText = rotateButtonFont.render('H', True, BLACK)
+verticalRotateButtonText = rotateButtonFont.render('V', True, BLACK)
+horizontalRotateTextRect = horizontalRotateButtonText.get_rect(center = (SCREEN_WIDTH * 1/26 - wallSize, SCREEN_HEIGHT * 1/26 - wallSize))
+verticalRotateButtonTextRect = verticalRotateButtonText.get_rect(center = (SCREEN_WIDTH * 1/26 - wallSize, SCREEN_HEIGHT * 1/26 - wallSize))
+rotateButton = pygame.draw.rect(screen, BLACK, pygame.Rect(0, 0, SCREEN_WIDTH * 1/26 + wallSize, SCREEN_HEIGHT * 1/26 + wallSize))
 
-rotateButton = pygame.draw.rect(screen, BLACK, pygame.Rect(0, 0, 50, 50))
+def findObjectPos(board, player):
+    for i in range(rows):
+        for j in range(columns):
+            if board[i][j] == player:
+                return [i, j]
 
-def createAVerticalWall(x, y):
-    a = x  * 2
-    y = y - 1
-    y = y * 2
-    for i in range(3):
-        b = i
-        boardArray[y + b][a - 1] = 'w'
-    
-def createAHorizontalWall(x, y):
-    a = y  * 2
-    x = x - 1
-    x = x * 2
-    for i in range(3):
-        b = i
-        boardArray[a - 1][b + x] = 'w'
+def getHorizontalWallCount():
+    res = []
+    for i in range(rows):
+        for j in range(columns):
+            if horizontalWallPositions[i][j] == 'w':
+                res.append((j, i))
+    return res
 
-def drawAHorizontalWall(board):
-    rowCoords = WallLogic.wallCountRow(board)
+def getVerticalWallCount():
+    res = []
+    for i in range(rows):
+        for j in range(columns):
+            if verticalWallPositions[i][j] == 'w':
+                res.append((j, i))
+    return res
+
+def horizontalWallCheck(x, y):
+    if verticalWallPositions[x][y] != 'w':
+        if x == 8:
+            if horizontalWallPositions[x - 1][y] == None:
+                return True
+        if horizontalWallPositions[x - 1][y] == None and horizontalWallPositions[x + 1][y] == None:
+            return True
+    return False
+
+def verticalWallCheck(x, y):
+    if horizontalWallPositions[x][y] != 'w':
+        if y == 8:
+            if verticalWallPositions[x][y - 1] == None:
+                return True
+        if verticalWallPositions[x][y - 1] == None and verticalWallPositions[x][y + 1] == None:
+            return True
+    return False
+
+def drawAHorizontalWall():
+    rowCoords = getHorizontalWallCount()
     for i in range(len(rowCoords)):
         temp = rowCoords[i]
         if len(rowCoords) > 0:
-            wallCoordX, wallCoordY = temp[0]
+            wallCoordY, wallCoordX = temp
         if len(rowCoords) > 0:
-            #print(str(wallCoordX) + ", " + str(wallCoordY))
-            if wallCoordY != 1:
-                wallCoordY = ((2 * wallCoordY) - 1)/2
-            #print(wallCoordY)
+            wallCoordX -= 1
             wall = Rect(defaultPosX + wallSize/2 + ((blockSize + (2 * wallSize)) * wallCoordX), 
                         defaultPosY + wallSize/2 + ((blockSize + wallSize) * wallCoordY) + ((wallCoordY - 1) * wallSize),
                         (blockSize + (1.5 * wallSize)) * 2, wallSize, YELLOW)
             walls.add(wall)
 
-def drawAVerticalWall(board):
-    columnCoords = WallLogic.wallCountColumn(board)
+def drawAVerticalWall():
+    columnCoords = getVerticalWallCount()
     for i in range(len(columnCoords)):
         temp = columnCoords[i]
         if len(columnCoords) > 0:
-            wallCoordX, wallCoordY = temp[0]
+            wallCoordY, wallCoordX = temp
         if len(columnCoords) > 0:
-            wallCoordX = wallCoordX + 1
-            wall = Rect((defaultPosX + wallSize/2 + (blockSize + wallSize) * (wallCoordX/2)) + ((wallCoordX/2) - 1) * wallSize, 
-                        defaultPosY + wallSize/2 + ((blockSize + (2 * wallSize)) * (wallCoordY / 2)),
+            wallCoordY -= 1
+            wall = Rect((defaultPosX + wallSize/2 + (blockSize + wallSize) * wallCoordX) + (wallCoordX - 1) * wallSize, 
+                        defaultPosY + wallSize/2 + ((blockSize + (2 * wallSize)) * wallCoordY),
                         wallSize, (blockSize + (1.5 * wallSize)) * 2, YELLOW)
         walls.add(wall)
 
@@ -201,22 +175,16 @@ def displayBoard(board):
     for i in range(rows):
         for j in range(columns):
             if board[j][i] == 'p1':
-                player1.move(defaultPosX + wallSize + (blockSize + (2 * wallSize)) * (i / 2), defaultPosY + wallSize + (blockSize + (2 * wallSize)) * (j / 2))
+                player1.move(defaultPosX + wallSize + (blockSize + (2 * wallSize)) * i, defaultPosY + wallSize + (blockSize + (2 * wallSize)) * j)
                 player1.draw()
             if board[j][i] == 'p2':
-                player2.move(defaultPosX + wallSize + (blockSize + (2 * wallSize)) * (i / 2), defaultPosY + wallSize + (blockSize + (2 * wallSize)) * (j / 2))
+                player2.move(defaultPosX + wallSize + (blockSize + (2 * wallSize)) * i, defaultPosY + wallSize + (blockSize + (2 * wallSize)) * j)
                 player2.draw()
-
-def findPlayerPos(board, player):
-    for i in range(rows):
-        for j in range(columns):
-            if board[i][j] == player:
-                return [i, j]
             
 
 def main():
     run = True
-    horizontal = True
+    horizontal = False
     while run:
         clock.tick(FPS)
         
@@ -229,11 +197,8 @@ def main():
             for j in range(9):
                 pygame.draw.rect(screen, WHITE, pygame.Rect(defaultPosX + wallSize + (i * blockSize) + (2 * i * wallSize), defaultPosY + wallSize + (j * blockSize) + (2 * j * wallSize), blockSize, blockSize))
 
-        displayBoard(boardArray)
+        displayBoard(playersPosition)
         
-        drawAHorizontalWall(boardArray)
-        drawAVerticalWall(boardArray)
-        walls.draw(screen)
         moveUpButton = moveButton(up_arrow_img, player1.rect.x + player1.rect.width/2, player1.rect.y - player1.rect.height/5)
         moveRightButton = moveButton(right_arrow_img, player1.rect.x + player1.rect.width * 6/5, player1.rect.y + player1.rect.height/2)
         moveDownButton = moveButton(down_arrow_img, player1.rect.x + player1.rect.width/2, player1.rect.y + player1.rect.height * 6/5)
@@ -242,23 +207,23 @@ def main():
         moveRightButton2 = moveButton(right_arrow_img, player2.rect.x + player2.rect.width * 6/5, player2.rect.y + player2.rect.height/2)
         moveDownButton2 = moveButton(down_arrow_img, player2.rect.x + player2.rect.width/2, player2.rect.y + player2.rect.height * 6/5)
         moveLeftButton2 = moveButton(left_arrow_img, player2.rect.x - player2.rect.width/5, player2.rect.y + player2.rect.height/2)
-        temp = findPlayerPos(boardArray, 'p1')
-        if temp[0] != 16:
+        temp = findObjectPos(playersPosition, 'p1')
+        if temp[1] != 8:
             moveRightButton.draw()
-        if temp[1] != 0:
+        if temp[0] != 0:
             moveUpButton.draw()
-        if temp[0] != 0:
-            moveLeftButton.draw()
-        if temp[1] != 16:
-            moveDownButton.draw()
-        temp = findPlayerPos(boardArray, 'p2')
-        if temp[0] != 16:
-            moveRightButton2.draw()
         if temp[1] != 0:
-            moveUpButton2.draw()
+            moveLeftButton.draw()
+        if temp[0] != 8:
+            moveDownButton.draw()
+        temp = findObjectPos(playersPosition, 'p2')
+        if temp[1] != 8:
+            moveRightButton2.draw()
         if temp[0] != 0:
+            moveUpButton2.draw()
+        if temp[1] != 0:
             moveLeftButton2.draw()
-        if temp[1] != 16:
+        if temp[0] != 8:
             moveDownButton2.draw()
     
         for event in pygame.event.get():
@@ -266,78 +231,88 @@ def main():
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 #player1 controls
-                temp = findPlayerPos(boardArray, 'p1')
-                if moveRightButton.rect.collidepoint(event.pos) and temp[0] != 16:
+                temp = findObjectPos(playersPosition, 'p1')
+                if moveRightButton.rect.collidepoint(event.pos) and temp[1] != 8:
                     x, y = int(temp[0]), int(temp[1])
-                    boardArray[x][y] = None
-                    boardArray[x + 2][y] = 'p1'
-                if moveUpButton.rect.collidepoint(event.pos) and temp[1] != 0:
+                    playersPosition[x][y] = None
+                    playersPosition[x][y + 1] = 'p1'
+                if moveUpButton.rect.collidepoint(event.pos) and temp[0] != 0:
                     x, y = int(temp[0]), int(temp[1])
-                    boardArray[x][y] = None
-                    boardArray[x][y - 2] = 'p1'
-                if moveLeftButton.rect.collidepoint(event.pos) and temp[0] != 0:
+                    playersPosition[x][y] = None
+                    playersPosition[x - 1][y] = 'p1'
+                if moveLeftButton.rect.collidepoint(event.pos) and temp[1] != 0:
                     x, y = int(temp[0]), int(temp[1])
-                    boardArray[x][y] = None
-                    boardArray[x - 2][y] = 'p1'
-                if moveDownButton.rect.collidepoint(event.pos) and temp[1] != 16:
+                    playersPosition[x][y] = None
+                    playersPosition[x][y - 1] = 'p1'
+                if moveDownButton.rect.collidepoint(event.pos) and temp[0] != 8:
                     x, y = int(temp[0]), int(temp[1])
-                    boardArray[x][y] = None
-                    boardArray[x][y + 2] = 'p1'
+                    playersPosition[x][y] = None
+                    playersPosition[x + 1][y] = 'p1'
 
                 #player2 controls
-                temp = findPlayerPos(boardArray, 'p2')
-                if moveRightButton2.rect.collidepoint(event.pos) and temp[0] != 16:     
+                temp = findObjectPos(playersPosition, 'p2')
+                if moveRightButton2.rect.collidepoint(event.pos) and temp[1] != 8:     
                     x, y = int(temp[0]), int(temp[1])
-                    boardArray[x][y] = None
-                    boardArray[x + 2][y] = 'p2'
-                if moveUpButton2.rect.collidepoint(event.pos) and temp[1] != 0:
+                    playersPosition[x][y] = None
+                    playersPosition[x][y + 1] = 'p2'
+                if moveUpButton2.rect.collidepoint(event.pos) and temp[0] != 0:
                     x, y = int(temp[0]), int(temp[1])
-                    boardArray[x][y] = None
-                    boardArray[x][y - 2] = 'p2'
-                if moveLeftButton2.rect.collidepoint(event.pos) and temp[0] != 0:
+                    playersPosition[x][y] = None
+                    playersPosition[x - 1][y] = 'p2'
+                if moveLeftButton2.rect.collidepoint(event.pos) and temp[1] != 0:
                     x, y = int(temp[0]), int(temp[1])
-                    boardArray[x][y] = None
-                    boardArray[x - 2][y] = 'p2'
-                if moveDownButton2.rect.collidepoint(event.pos) and temp[1] != 16:
+                    playersPosition[x][y] = None
+                    playersPosition[x][y - 1] = 'p2'
+                if moveDownButton2.rect.collidepoint(event.pos) and temp[0] != 8:
                     x, y = int(temp[0]), int(temp[1])
-                    boardArray[x][y] = None
-                    boardArray[x][y + 2] = 'p2'
+                    playersPosition[x][y] = None
+                    playersPosition[x + 1][y] = 'p2'
 
                 #wall interactions
-                for i in range(1, 9):
-                    for j in range(1, 9):
-                        tempButton = wallArray[i - 1][j - 1]
+                for i in range(1, rows):
+                    for j in range(1, columns):
+                        tempButton = pygame.draw.rect(screen, BLACK, pygame.Rect(defaultPosX + wallSize/2 + (blockSize + wallSize) * i + ((i - 1) * wallSize), 
+                                                                                 defaultPosY - wallSize/2 + ((blockSize + (2 * wallSize)) * j),
+                                                                                 wallSize, wallSize))
                         if tempButton.collidepoint(event.pos):
-                            if horizontal == False:
-                                createAVerticalWall(i, j)
-                                wallArray[i - 1][j - 1] = pygame.draw.rect(screen, BLACK, pygame.Rect(-100, - 100, 1, 1))
-                                if j != 9:
-                                    wallArray[i - 1][j] = pygame.draw.rect(screen, BLACK, pygame.Rect(-100, - 100, 1, 1))
-                                elif j != 1:
-                                    wallArray[i - 1][j - 2] = pygame.draw.rect(screen, BLACK, pygame.Rect(-100, - 100, 1, 1))
-                            if horizontal == True:
-                                createAHorizontalWall(i, j)
-                                print(str(i) + ", " + str(j))
+                            if horizontal == False and verticalWallCheck(i, j):
+                                verticalWallPositions[i][j] = 'w'
+                                drawAVerticalWall()
+                                print("vertical wall coords:" + str(i) + ", " + str(j))
+                            if horizontal == True and horizontalWallCheck(i, j):
+                                horizontalWallPositions[i][j] = 'w'
+                                print("horizontal wall coords:" + str(i) + ", " + str(j))
+                                drawAHorizontalWall()
+                                
 
                 if rotateButton.collidepoint(event.pos) and horizontal == False:
                     horizontal = True
-                if rotateButton.collidepoint(event.pos) and horizontal == True:
-                    horizontal = True
-        for i in range(8):
-            for j in range(8):
-                tempButton = wallArray[i][j]
+                elif rotateButton.collidepoint(event.pos) and horizontal == True:
+                    horizontal = False
+        for i in range(1, rows):
+            for j in range(1, columns):
+                tempButton = pygame.draw.rect(screen, BLACK, pygame.Rect(defaultPosX + wallSize/2 + (blockSize + wallSize) * i + ((i - 1) * wallSize), 
+                                                                         defaultPosY - wallSize/2 + ((blockSize + (2 * wallSize)) * j),
+                                                                         wallSize, wallSize))
                 a, b = pygame.mouse.get_pos()        
                 if tempButton.x <= a <= tempButton.x + wallSize and tempButton.y <= b <= tempButton.y + wallSize:
                     pygame.draw.rect(screen, (YELLOW), tempButton)
                 else:
                     pygame.draw.rect(screen, (WOODBROWN), tempButton)
+
+        walls.draw(screen)
+
         a, b = pygame.mouse.get_pos()   
-        if tempButton.x <= a <= tempButton.x + wallSize and tempButton.y <= b <= tempButton.y + wallSize:
+        if rotateButton.x <= a <= rotateButton.x + (SCREEN_WIDTH * 1/26 + wallSize) and rotateButton.y <= b <= rotateButton.y + (SCREEN_HEIGHT * 1/26+ wallSize):
             pygame.draw.rect(screen, (192, 192, 192), rotateButton)
         else:
             pygame.draw.rect(screen, (128, 128, 128), rotateButton)
 
-            #keys_pressed = pygame.key.get_pressed()
+        if horizontal == True:
+            screen.blit(horizontalRotateButtonText, horizontalRotateTextRect)
+        elif horizontal == False:
+            screen.blit(verticalRotateButtonText, verticalRotateButtonTextRect)
+
         pygame.display.update()
 
     pygame.quit()
