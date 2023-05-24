@@ -104,12 +104,14 @@ horizontalRotateTextRect = horizontalRotateButtonText.get_rect(center = (SCREEN_
 verticalRotateButtonTextRect = verticalRotateButtonText.get_rect(center = (SCREEN_WIDTH * 1/26 - wallSize, SCREEN_HEIGHT * 1/26 - wallSize))
 rotateButton = pygame.draw.rect(screen, BLACK, pygame.Rect(0, 0, SCREEN_WIDTH * 1/26 + wallSize, SCREEN_HEIGHT * 1/26 + wallSize))
 
+#find the position of object on board
 def findObjectPos(board, player):
     for i in range(rows):
         for j in range(columns):
             if board[i][j] == player:
                 return [i, j]
 
+#get the coords of all horizontal walls
 def getHorizontalWallCount():
     res = []
     for i in range(rows):
@@ -118,6 +120,7 @@ def getHorizontalWallCount():
                 res.append((j, i))
     return res
 
+#get the coords of all vertical walls
 def getVerticalWallCount():
     res = []
     for i in range(rows):
@@ -126,6 +129,45 @@ def getVerticalWallCount():
                 res.append((j, i))
     return res
 
+#returns True if wall in front of player
+def wallInFront(player):
+    playerPosition = findObjectPos(playersPosition, player)
+    playerX, playerY = playerPosition[1], playerPosition[0]
+    if verticalWallPositions[playerX + 1][playerY] == 'w' or verticalWallPositions[playerX + 1][playerY + 1] == 'w':
+        return True
+    else:
+        return False
+
+#returns True if wall is behind of player
+def wallBehind(player):
+    playerPosition = findObjectPos(playersPosition, player)
+    playerX, playerY = playerPosition[1], playerPosition[0]
+    if verticalWallPositions[playerX][playerY] == 'w' or verticalWallPositions[playerX][playerY + 1] == 'w':
+        return True
+    else:
+        return False
+    
+#returns True if wall is under player
+def wallUnder(player):
+    playerPosition = findObjectPos(playersPosition, player)
+    playerX, playerY = playerPosition[1], playerPosition[0]
+    if playerX < 8:
+        if horizontalWallPositions[playerX][playerY + 1] == 'w' or horizontalWallPositions[playerX + 1][playerY + 1] == 'w':
+            return True
+        else:
+            return False
+    
+#returns True if wall is over player
+def wallOver(player):
+    playerPosition = findObjectPos(playersPosition, player)
+    playerX, playerY = playerPosition[1], playerPosition[0]
+    if playerX < 8:
+        if horizontalWallPositions[playerX][playerY] == 'w' or horizontalWallPositions[playerX + 1][playerY] == 'w':
+            return True
+        else:
+            return False
+
+#return True if vertical wall isn't there and there's a wall in front or behind coords
 def horizontalWallCheck(x, y):
     if verticalWallPositions[x][y] != 'w':
         if x == 8:
@@ -135,6 +177,7 @@ def horizontalWallCheck(x, y):
             return True
     return False
 
+#return True if horizontal wall isn't there and there's a wall under or over coords
 def verticalWallCheck(x, y):
     if horizontalWallPositions[x][y] != 'w':
         if y == 8:
@@ -144,6 +187,7 @@ def verticalWallCheck(x, y):
             return True
     return False
 
+#makes a wall group with all the horizontal walls
 def drawAHorizontalWall():
     rowCoords = getHorizontalWallCount()
     for i in range(len(rowCoords)):
@@ -157,6 +201,7 @@ def drawAHorizontalWall():
                         (blockSize + (1.5 * wallSize)) * 2, wallSize, YELLOW)
             walls.add(wall)
 
+#makes a wall group with all the vertical walls
 def drawAVerticalWall():
     columnCoords = getVerticalWallCount()
     for i in range(len(columnCoords)):
@@ -170,7 +215,7 @@ def drawAVerticalWall():
                         wallSize, (blockSize + (1.5 * wallSize)) * 2, YELLOW)
         walls.add(wall)
 
-
+#shows the players on board
 def displayBoard(board):
     for i in range(rows):
         for j in range(columns):
@@ -180,11 +225,25 @@ def displayBoard(board):
             if board[j][i] == 'p2':
                 player2.move(defaultPosX + wallSize + (blockSize + (2 * wallSize)) * i, defaultPosY + wallSize + (blockSize + (2 * wallSize)) * j)
                 player2.draw()
-            
+
 
 def main():
     run = True
     horizontal = False
+    turn = True 
+    rightDiagonal = False
+    UpDiagonal = False
+    leftDiagonal = False
+    downDiagonal = False
+
+    #swaps Turns between players
+    def swapTurns(turn):
+        if turn == True:
+            turn = False
+        elif turn == False:
+            turn = True
+        return turn
+
     while run:
         clock.tick(FPS)
         
@@ -199,6 +258,7 @@ def main():
 
         displayBoard(playersPosition)
         
+        #Makes buttons and places them in correct position
         moveUpButton = moveButton(up_arrow_img, player1.rect.x + player1.rect.width/2, player1.rect.y - player1.rect.height/5)
         moveRightButton = moveButton(right_arrow_img, player1.rect.x + player1.rect.width * 6/5, player1.rect.y + player1.rect.height/2)
         moveDownButton = moveButton(down_arrow_img, player1.rect.x + player1.rect.width/2, player1.rect.y + player1.rect.height * 6/5)
@@ -207,66 +267,108 @@ def main():
         moveRightButton2 = moveButton(right_arrow_img, player2.rect.x + player2.rect.width * 6/5, player2.rect.y + player2.rect.height/2)
         moveDownButton2 = moveButton(down_arrow_img, player2.rect.x + player2.rect.width/2, player2.rect.y + player2.rect.height * 6/5)
         moveLeftButton2 = moveButton(left_arrow_img, player2.rect.x - player2.rect.width/5, player2.rect.y + player2.rect.height/2)
-        temp = findObjectPos(playersPosition, 'p1')
-        if temp[1] != 8:
-            moveRightButton.draw()
-        if temp[0] != 0:
-            moveUpButton.draw()
-        if temp[1] != 0:
-            moveLeftButton.draw()
-        if temp[0] != 8:
-            moveDownButton.draw()
-        temp = findObjectPos(playersPosition, 'p2')
-        if temp[1] != 8:
-            moveRightButton2.draw()
-        if temp[0] != 0:
-            moveUpButton2.draw()
-        if temp[1] != 0:
-            moveLeftButton2.draw()
-        if temp[0] != 8:
-            moveDownButton2.draw()
+        
+        #draws the movement options based on player position
+        if turn == True:
+            temp = findObjectPos(playersPosition, 'p1')
+            if temp[1] != 8 and not wallInFront('p1'):
+                moveRightButton.draw()
+            if temp[0] != 0 and not wallOver('p1'):
+                moveUpButton.draw()
+            if temp[1] != 0 and not wallBehind('p1'):
+                moveLeftButton.draw()
+            if temp[0] != 8 and not wallUnder('p1'):
+                moveDownButton.draw()
+
+        if turn == False:
+            temp = findObjectPos(playersPosition, 'p2')
+            if temp[1] != 8 and not wallInFront('p2'):
+                moveRightButton2.draw()
+            if temp[0] != 0 and not wallOver('p2'):
+                moveUpButton2.draw()
+            if temp[1] != 0 and not wallBehind('p2'):
+                moveLeftButton2.draw()
+            if temp[0] != 8 and not wallUnder('p2'):
+                moveDownButton2.draw()
     
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 #player1 controls
-                temp = findObjectPos(playersPosition, 'p1')
-                if moveRightButton.rect.collidepoint(event.pos) and temp[1] != 8:
+                if turn == True:
+                    temp = findObjectPos(playersPosition, 'p1')
                     x, y = int(temp[0]), int(temp[1])
-                    playersPosition[x][y] = None
-                    playersPosition[x][y + 1] = 'p1'
-                if moveUpButton.rect.collidepoint(event.pos) and temp[0] != 0:
-                    x, y = int(temp[0]), int(temp[1])
-                    playersPosition[x][y] = None
-                    playersPosition[x - 1][y] = 'p1'
-                if moveLeftButton.rect.collidepoint(event.pos) and temp[1] != 0:
-                    x, y = int(temp[0]), int(temp[1])
-                    playersPosition[x][y] = None
-                    playersPosition[x][y - 1] = 'p1'
-                if moveDownButton.rect.collidepoint(event.pos) and temp[0] != 8:
-                    x, y = int(temp[0]), int(temp[1])
-                    playersPosition[x][y] = None
-                    playersPosition[x + 1][y] = 'p1'
+                    if moveRightButton.rect.collidepoint(event.pos) and temp[1] != 8 and not wallInFront('p1'):
+                        playersPosition[x][y] = None
+                        
+                        #skip over player
+                        if playersPosition[x][y + 1] == 'p2' and not wallInFront('p2'):
+                            playersPosition[x][y + 2] = 'p1'
+                        
+                        #move diagonally
+                        elif  playersPosition[x][y + 1] == 'p2' and wallInFront('p2'):
+                            playersPosition[x][y] = 'p1'
+                            turn = swapTurns(turn)
+                        #move forward
+                        else:
+                            playersPosition[x][y + 1] = 'p1'
+                        turn = swapTurns(turn)
+                    elif moveUpButton.rect.collidepoint(event.pos) and temp[0] != 0 and not wallOver('p1'):
+                        playersPosition[x][y] = None
+                        if playersPosition[x - 1][y] == 'p2' and not wallOver('p2'):
+                            playersPosition[x - 2][y] = 'p1'
+                        else:
+                            playersPosition[x - 1][y] = 'p1'
+                        turn = swapTurns(turn)
+                    elif moveLeftButton.rect.collidepoint(event.pos) and temp[1] != 0 and not wallBehind('p1'):
+                        playersPosition[x][y] = None
+                        if playersPosition[x][y - 1] == 'p2' and not wallBehind('p2'):
+                            playersPosition[x][y - 2] = 'p1'
+                        else:
+                            playersPosition[x][y - 1] = 'p1'
+                        turn = swapTurns(turn)
+                    elif moveDownButton.rect.collidepoint(event.pos) and temp[0] != 8 and not wallUnder('p1'):
+                        playersPosition[x][y] = None
+                        if playersPosition[x + 1][y] == 'p2' and not wallUnder('p2'):
+                            playersPosition[x + 2][y] = 'p1'
+                        else:
+                            playersPosition[x + 1][y] = 'p1'
+                        turn = swapTurns(turn)
 
                 #player2 controls
-                temp = findObjectPos(playersPosition, 'p2')
-                if moveRightButton2.rect.collidepoint(event.pos) and temp[1] != 8:     
+                else:
+                    temp = findObjectPos(playersPosition, 'p2')
                     x, y = int(temp[0]), int(temp[1])
-                    playersPosition[x][y] = None
-                    playersPosition[x][y + 1] = 'p2'
-                if moveUpButton2.rect.collidepoint(event.pos) and temp[0] != 0:
-                    x, y = int(temp[0]), int(temp[1])
-                    playersPosition[x][y] = None
-                    playersPosition[x - 1][y] = 'p2'
-                if moveLeftButton2.rect.collidepoint(event.pos) and temp[1] != 0:
-                    x, y = int(temp[0]), int(temp[1])
-                    playersPosition[x][y] = None
-                    playersPosition[x][y - 1] = 'p2'
-                if moveDownButton2.rect.collidepoint(event.pos) and temp[0] != 8:
-                    x, y = int(temp[0]), int(temp[1])
-                    playersPosition[x][y] = None
-                    playersPosition[x + 1][y] = 'p2'
+                    if moveRightButton2.rect.collidepoint(event.pos) and temp[1] != 8 and not wallInFront('p2'):     
+                        playersPosition[x][y] = None
+                        if playersPosition[x][y + 1] == 'p1' and not wallInFront('p1'):
+                            playersPosition[x][y + 2] = 'p2'
+                        else:
+                            playersPosition[x][y + 1] = 'p2'
+                        turn = swapTurns(turn)
+                    elif moveUpButton2.rect.collidepoint(event.pos) and temp[0] != 0 and not wallOver('p2'):
+                        playersPosition[x][y] = None
+                        if playersPosition[x - 1][y] == 'p1' and not wallOver('p1'):
+                            playersPosition[x - 2][y] = 'p2'
+                        else:
+                            playersPosition[x - 1][y] = 'p2'
+                        turn = swapTurns(turn)
+                    elif moveLeftButton2.rect.collidepoint(event.pos) and temp[1] != 0 and not wallBehind('p2'):
+                        playersPosition[x][y] = None
+                        if playersPosition[x][y - 1] == 'p1' and not wallBehind('p1'):
+                            playersPosition[x][y - 2] = 'p2'
+                        else:
+                            playersPosition[x][y - 1] = 'p2'
+                        turn = swapTurns(turn)
+                    elif moveDownButton2.rect.collidepoint(event.pos) and temp[0] != 8 and not wallUnder('p2'):
+                        playersPosition[x][y] = None
+                        if playersPosition[x + 1][y] == 'p1' and not wallUnder('p1'):
+                            playersPosition[x + 2][y] = 'p2'
+                        else:
+                            playersPosition[x + 1][y] = 'p2'
+                        turn = swapTurns(turn)
+
 
                 #wall interactions
                 for i in range(1, rows):
@@ -278,17 +380,19 @@ def main():
                             if horizontal == False and verticalWallCheck(i, j):
                                 verticalWallPositions[i][j] = 'w'
                                 drawAVerticalWall()
-                                print("vertical wall coords:" + str(i) + ", " + str(j))
-                            if horizontal == True and horizontalWallCheck(i, j):
+                                #print("vertical wall coords:" + str(i) + ", " + str(j))
+                            elif horizontal == True and horizontalWallCheck(i, j):
                                 horizontalWallPositions[i][j] = 'w'
-                                print("horizontal wall coords:" + str(i) + ", " + str(j))
                                 drawAHorizontalWall()
-                                
+                                #print("horizontal wall coords:" + str(i) + ", " + str(j))
+                            turn = swapTurns(turn)
 
+                #Button that allows player to choose whether or not player places a horizontal or vertical wall
                 if rotateButton.collidepoint(event.pos) and horizontal == False:
                     horizontal = True
                 elif rotateButton.collidepoint(event.pos) and horizontal == True:
                     horizontal = False
+        
         for i in range(1, rows):
             for j in range(1, columns):
                 tempButton = pygame.draw.rect(screen, BLACK, pygame.Rect(defaultPosX + wallSize/2 + (blockSize + wallSize) * i + ((i - 1) * wallSize), 
